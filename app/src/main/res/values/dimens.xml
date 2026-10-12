@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Spacing scale -->
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="space_s">8dp</dimen>
+    <dimen name="space_m">16dp</dimen>
+    <dimen name="space_l">24dp</dimen>
+    <dimen name="space_xl">32dp</dimen>
+    <dimen name="screen_margin">24dp</dimen>
+
+    <!-- Components -->
+    <dimen name="search_height">48dp</dimen>
+    <dimen name="button_height">40dp</dimen>
+    <dimen name="row_min_height">72dp</dimen>
+    <dimen name="icon_size">20dp</dimen>
+    <dimen name="divider_height">1dp</dimen>
+
+    <!-- Type scale -->
+    <dimen name="text_wordmark">22sp</dimen>
+    <dimen name="text_title">17sp</dimen>
+    <dimen name="text_body">15sp</dimen>
+    <dimen name="text_caption">13sp</dimen>
+</resources>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.AknSetlist" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/akn_accent</item>
+        <item name="colorOnPrimary">@color/akn_on_accent</item>
+        <item name="colorSurface">@color/akn_bg</item>
+        <item name="colorOnSurface">@color/akn_text_primary</item>
+        <item name="colorOnSurfaceVariant">@color/akn_text_secondary</item>
+        <item name="colorError">@color/akn_error</item>
+        <item name="android:colorBackground">@color/akn_bg</item>
+        <item name="android:windowBackground">@color/akn_bg</item>
+        <item name="android:statusBarColor">@color/akn_bg</item>
+        <item name="android:navigationBarColor">@color/akn_bg</item>
+        <item name="android:textColorPrimary">@color/akn_text_primary</item>
+        <item name="android:textColorSecondary">@color/akn_text_secondary</item>
+        <item name="android:textColorHint">@color/akn_text_tertiary</item>
+    </style>
+
+    <!-- Text styles. Dotted names imply a parent, so the base styles must exist. -->
+    <style name="Text" />
+    <style name="Text.Wordmark" />
+
+    <style name="Text.Wordmark.Primary">
+        <item name="android:textSize">@dimen/text_wordmark</item>
+        <item name="android:textColor">@color/akn_text_primary</item>
+        <item name="android:fontFamily">sans-serif-black</item>
+        <item name="android:letterSpacing">0.04</item>
+    </style>
+    <style name="Text.Wordmark.Secondary">
+        <item name="android:textSize">@dimen/text_wordmark</item>
+        <item name="android:textColor">@color/akn_text_secondary</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:letterSpacing">0.18</item>
+    </style>
+    <style name="Text.Title">
+        <item name="android:textSize">@dimen/text_title</item>
+        <item name="android:textColor">@color/akn_text_primary</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <style name="Text.Body">
+        <item name="android:textSize">@dimen/text_body</item>
+        <item name="android:textColor">@color/akn_text_secondary</item>
+    </style>
+    <style name="Text.Caption">
+        <item name="android:textSize">@dimen/text_caption</item>
+        <item name="android:textColor">@color/akn_text_secondary</item>
+    </style>
+
+    <!-- Accent action button (Sync) -->
+    <style name="Widget.Akn.Button.Accent" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/akn_accent</item>
+        <item name="android:textColor">@color/akn_on_accent</item>
+        <item name="iconTint">@color/akn_on_accent</item>
+        <item name="rippleColor">@color/akn_accent_pressed</item>
+        <item name="android:textSize">@dimen/text_caption</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">20dp</item>
+        <item name="iconSize">18dp</item>
+        <item name="iconPadding">6dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">18dp</item>
+    </style>
+
+    <!-- Song detail. Explicit parents everywhere: a dotted name alone implies a parent. -->
+    <style name="Text.DetailTitle" parent="Text.Title">
+        <item name="android:textSize">26sp</item>
+        <item name="android:lineSpacingMultiplier">1.05</item>
+    </style>
+    <style name="Text.DetailArtist" parent="Text.Body">
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <!-- Compact top-bar / footer button (TextView) -->
+    <style name="Widget.Akn.ToolButton" parent="">
+        <item name="android:background">@drawable/bg_tool_button</item>
+        <item name="android:textColor">@color/tool_button_text</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:gravity">center</item>
+        <item name="android:minWidth">44dp</item>
+        <item name="android:minHeight">40dp</item>
+        <item name="android:paddingStart">14dp</item>
+        <item name="android:paddingEnd">14dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+</resources>

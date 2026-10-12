@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AKN Setlist</string>
+    <string name="wordmark_primary">AKN</string>
+    <string name="wordmark_secondary">SETLIST</string>
+    <string name="action_sync">Sync</string>
+    <string name="action_clear_search">Clear search</string>
+    <string name="search_hint">Search songs or artists</string>
+    <string name="last_sync_never">Never synced</string>
+    <string name="last_sync_format">Synced %1$s</string>
+    <string name="song_count_placeholder">0 songs</string>
+    <plurals name="song_count">
+        <item quantity="one">%d song</item>
+        <item quantity="other">%d songs</item>
+    </plurals>
+    <string name="empty_title">No songs yet</string>
+    <string name="empty_message">Tap Sync while online to download your setlist. It will stay available offline.</string>
+    <string name="empty_search_title">No matches</string>
+    <string name="empty_search_message">Try a different title or artist.</string>
+    <string name="sync_just_now">just now</string>
+    <string name="sync_syncing">Syncing</string>
+    <plurals name="sync_success">
+        <item quantity="one">Synced %d song</item>
+        <item quantity="other">Synced %d songs</item>
+    </plurals>
+    <string name="error_not_configured">Add your Supabase URL and key in app/build.gradle, then rebuild.</string>
+    <string name="error_network">Couldn\'t reach the server. Your saved songs are untouched.</string>
+    <string name="error_auth">The server rejected the key. Your saved songs are untouched.</string>
+    <string name="error_server">The server returned an error. Your saved songs are untouched.</string>
+    <string name="error_invalid_data">The server sent data the app couldn\'t read. Your saved songs are untouched.</string>
+    <string name="error_storage">Couldn\'t save songs on this device. Your previous songs are untouched.</string>
+    <string name="error_load">Couldn\'t load songs from this device.</string>
+    <string name="error_unknown">Something went wrong. Your saved songs are untouched.</string>
+    <string name="finished_mark">Mark as finished</string>
+    <string name="finished_undo">Finished. Tap to undo</string>
+    <string name="detail_back">Back to song list</string>
+    <string name="detail_position">%1$d / %2$d</string>
+    <string name="detail_smaller">Smaller text</string>
+    <string name="detail_larger">Larger text</string>
+    <string name="detail_toggle_chords">Show or hide chords</string>
+    <string name="detail_prev">‹  Prev</string>
+    <string name="detail_next">Next  ›</string>
+    <string name="song_not_found">Song not found on this device.</string>
+</resources>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Surfaces: graphite, stepping up in lightness -->
+    <color name="akn_bg">#16171A</color>
+    <color name="akn_surface">#1F2125</color>
+    <color name="akn_surface_pressed">#272A2F</color>
+    <color name="akn_divider">#2B2E33</color>
+
+    <!-- Text -->
+    <color name="akn_text_primary">#F1EDE4</color>
+    <color name="akn_text_secondary">#8D9199</color>
+    <color name="akn_text_tertiary">#5F636B</color>
+
+    <!-- Accent: muted mint-lime, used only for primary actions -->
+    <color name="akn_accent">#B4E3A0</color>
+    <color name="akn_accent_pressed">#9CCB88</color>
+    <color name="akn_on_accent">#16171A</color>
+
+    <!-- Feedback -->
+    <color name="akn_error">#E58B7E</color>
+</resources>
