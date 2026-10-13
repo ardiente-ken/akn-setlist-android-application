@@ -101,6 +101,7 @@ public class SongDetailActivity extends AppCompatActivity {
         artistText = findViewById(R.id.text_song_artist);
         chordsSummary = findViewById(R.id.text_chords_summary);
         chart = findViewById(R.id.text_chart);
+        chart.setHorizontallyScrolling(true); // the renderer wraps; the view must never re-wrap
         smallerButton = findViewById(R.id.button_smaller);
         largerButton = findViewById(R.id.button_larger);
         chordsButton = findViewById(R.id.button_chords);

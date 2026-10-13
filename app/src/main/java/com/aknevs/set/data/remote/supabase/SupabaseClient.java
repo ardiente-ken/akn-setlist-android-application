@@ -91,6 +91,7 @@ public class SupabaseClient {
         }
     }
 
+   // /** "0-999/2345" -> 2345, "*/0" -> 0, anything else -> -1. */
     private static int parseTotal(String contentRange) {
         if (contentRange == null) return -1;
         int slash = contentRange.lastIndexOf('/');
