@@ -18,10 +18,17 @@ import androidx.core.content.ContextCompat;
 import com.aknevs.set.AknApplication;
 import com.aknevs.set.R;
 import com.aknevs.set.domain.model.Song;
+import com.aknevs.set.domain.model.RequestsConnection;
+import com.aknevs.set.domain.model.SongRequest;
 import com.aknevs.set.domain.repository.RepositoryCallback;
+import com.aknevs.set.domain.repository.RequestListener;
+import com.aknevs.set.domain.usecase.ManageRequestsUseCase;
+import com.aknevs.set.presentation.requests.RequestQueueSheet;
+import com.google.android.material.snackbar.Snackbar;
 import com.aknevs.set.domain.usecase.GetSongUseCase;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Read-only performance view. Receives the ordered list of song ids it can move through
@@ -71,6 +78,31 @@ public class SongDetailActivity extends AppCompatActivity {
     private TextView chordsButton;
     private TextView prevButton;
     private TextView nextButton;
+    private TextView queueButton;
+
+    private ManageRequestsUseCase requests;
+    private int pendingCount = 0;
+
+    private final RequestListener requestListener = new RequestListener() {
+        @Override
+        public void onRequestsChanged(List<SongRequest> pending) {
+            pendingCount = pending.size();
+            queueButton.setText(pendingCount == 0
+                    ? getString(R.string.queue_button)
+                    : getString(R.string.queue_button_count, pendingCount));
+            queueButton.setSelected(pendingCount > 0);
+        }
+
+        @Override
+        public void onConnectionChanged(RequestsConnection connection, String detail) {
+            // The queue button is enough here; connection details live in the queue sheet.
+        }
+
+        @Override
+        public void onNewRequest(SongRequest request) {
+            showNewRequest(request);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,6 +123,7 @@ public class SongDetailActivity extends AppCompatActivity {
         index = Math.max(0, Math.min(index, ids.size() - 1));
 
         getSong = ((AknApplication) getApplication()).getGetSongUseCase();
+        requests = ((AknApplication) getApplication()).getManageRequestsUseCase();
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         fontSp = Math.max(MIN_SP, Math.min(MAX_SP, prefs.getInt(KEY_FONT_SP, DEFAULT_SP)));
 
@@ -107,6 +140,8 @@ public class SongDetailActivity extends AppCompatActivity {
         chordsButton = findViewById(R.id.button_chords);
         prevButton = findViewById(R.id.button_prev);
         nextButton = findViewById(R.id.button_next);
+        queueButton = findViewById(R.id.button_queue);
+        queueButton.setOnClickListener(v -> RequestQueueSheet.show(getSupportFragmentManager()));
 
         findViewById(R.id.button_back).setOnClickListener(v -> finish());
         smallerButton.setOnClickListener(v -> changeFont(-STEP_SP));
@@ -144,6 +179,27 @@ public class SongDetailActivity extends AppCompatActivity {
         chordsButton.setSelected(showChords);
         applyFontSize();
         loadSong();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (requests != null) requests.observe(requestListener);
+    }
+
+    @Override
+    protected void onStop() {
+        if (requests != null) requests.stopObserving(requestListener);
+        super.onStop();
+    }
+
+    private void showNewRequest(SongRequest request) {
+        Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content),
+                getString(R.string.request_new, request.getTitle()), Snackbar.LENGTH_LONG);
+        snackbar.setAnchorView(prevButton); // sit above Prev/Next
+        snackbar.setBackgroundTint(ContextCompat.getColor(this, R.color.akn_surface_pressed));
+        snackbar.setTextColor(ContextCompat.getColor(this, R.color.akn_text_primary));
+        snackbar.show();
     }
 
     @Override

@@ -31,6 +31,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:paddingStart="4dp" />
 
         <TextView
@@ -39,7 +41,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:contentDescription="@string/detail_smaller"
-            android:text="A\u2212" />
+            android:text="A&#x2212;" />
 
         <TextView
             android:id="@+id/button_larger"
@@ -57,7 +59,15 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:contentDescription="@string/detail_toggle_chords"
-            android:text="\u266F" />
+            android:text="&#x266F;" />
+
+        <TextView
+            android:id="@+id/button_queue"
+            style="@style/Widget.Akn.ToolButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/queue_button" />
     </LinearLayout>
 
     <View

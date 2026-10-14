@@ -86,6 +86,64 @@
             android:textColor="@color/akn_text_primary" />
     </LinearLayout>
 
+    <!-- Requests: allow switch, live status, queue -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginStart="@dimen/screen_margin"
+        android:layout_marginTop="@dimen/space_m"
+        android:layout_marginEnd="@dimen/screen_margin"
+        android:background="@drawable/bg_requests"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/space_m"
+        android:paddingEnd="@dimen/space_s">
+
+        <View
+            android:id="@+id/view_request_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/bg_dot" />
+
+        <TextView
+            android:id="@+id/text_request_status"
+            style="@style/Text.Body"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/requests_checking" />
+
+        <TextView
+            android:id="@+id/button_queue"
+            style="@style/Widget.Akn.ToolButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="36dp"
+            android:text="@string/queue_button"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/button_admin"
+            style="@style/Widget.Akn.ToolButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:minHeight="36dp"
+            android:text="@string/admin_button"
+            android:textSize="13sp" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/switch_requests"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:contentDescription="@string/requests_switch"
+            android:visibility="gone" />
+    </LinearLayout>
+
     <!-- Search -->
     <LinearLayout
         android:layout_width="match_parent"

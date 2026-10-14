@@ -15,6 +15,11 @@
         <item name="android:textColorPrimary">@color/akn_text_primary</item>
         <item name="android:textColorSecondary">@color/akn_text_secondary</item>
         <item name="android:textColorHint">@color/akn_text_tertiary</item>
+        <item name="colorSurfaceContainerLowest">@color/akn_bg</item>
+        <item name="colorSurfaceContainerLow">@color/akn_surface</item>
+        <item name="colorSurfaceContainer">@color/akn_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/akn_surface_pressed</item>
+        <item name="colorSurfaceContainerHighest">@color/akn_surface_pressed</item>
     </style>
 
     <!-- Text styles. Dotted names imply a parent, so the base styles must exist. -->

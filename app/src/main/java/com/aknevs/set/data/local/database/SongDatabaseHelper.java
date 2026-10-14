@@ -131,6 +131,29 @@ public class SongDatabaseHelper extends SQLiteOpenHelper {
         return null;
     }
 
+    /**
+     * The local song a request refers to: by id when the request came from the library,
+     * otherwise (or if that id is not stored) by title, preferring a matching artist.
+     */
+    public String findSongId(String songId, String title, String artist) {
+        SQLiteDatabase db = getReadableDatabase();
+        if (songId != null) {
+            try (Cursor c = db.rawQuery("SELECT id FROM " + AppConstants.TABLE_SONGS
+                    + " WHERE id = ? LIMIT 1", new String[]{songId})) {
+                if (c.moveToFirst()) return c.getString(0);
+            }
+        }
+        String wantedTitle = title == null ? "" : title.trim();
+        if (wantedTitle.isEmpty()) return null;
+        try (Cursor c = db.rawQuery("SELECT id FROM " + AppConstants.TABLE_SONGS
+                        + " WHERE title = ? COLLATE NOCASE"
+                        + " ORDER BY (artist = ? COLLATE NOCASE) DESC, id ASC LIMIT 1",
+                new String[]{wantedTitle, artist == null ? "" : artist.trim()})) {
+            if (c.moveToFirst()) return c.getString(0);
+        }
+        return null;
+    }
+
     private static String likePattern(String q) {
         String escaped = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
         return "%" + escaped + "%";

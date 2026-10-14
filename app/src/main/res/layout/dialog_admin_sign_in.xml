@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="24dp">
+
+    <EditText
+        android:id="@+id/edit_admin_email"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:background="@drawable/bg_field"
+        android:hint="@string/admin_email"
+        android:importantForAutofill="yes"
+        android:autofillHints="emailAddress"
+        android:inputType="textEmailAddress"
+        android:maxLines="1"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:textColor="@color/akn_text_primary"
+        android:textColorHint="@color/akn_text_tertiary"
+        android:textSize="@dimen/text_body" />
+
+    <EditText
+        android:id="@+id/edit_admin_password"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_field"
+        android:hint="@string/admin_password"
+        android:importantForAutofill="yes"
+        android:autofillHints="password"
+        android:inputType="textPassword"
+        android:maxLines="1"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:textColor="@color/akn_text_primary"
+        android:textColorHint="@color/akn_text_tertiary"
+        android:textSize="@dimen/text_body" />
+
+    <TextView
+        android:id="@+id/text_admin_error"
+        style="@style/Text.Caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textColor="@color/akn_error"
+        android:visibility="gone" />
+</LinearLayout>

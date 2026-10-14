@@ -25,14 +25,23 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.aknevs.set.AknApplication;
 import com.aknevs.set.R;
 import com.aknevs.set.core.utils.DateUtils;
+import com.aknevs.set.domain.model.RequestsAvailability;
+import com.aknevs.set.domain.model.RequestsConnection;
 import com.aknevs.set.domain.model.Song;
+import com.aknevs.set.domain.model.SongRequest;
 import com.aknevs.set.domain.model.SyncException;
 import com.aknevs.set.domain.model.SyncResult;
 import com.aknevs.set.domain.repository.RepositoryCallback;
+import com.aknevs.set.domain.repository.RequestListener;
 import com.aknevs.set.domain.usecase.GetSongsUseCase;
+import com.aknevs.set.domain.usecase.ManageRequestsUseCase;
 import com.aknevs.set.domain.usecase.SyncSongsUseCase;
+import com.aknevs.set.presentation.requests.AdminSignInDialog;
+import com.aknevs.set.presentation.requests.RequestQueueSheet;
+import com.aknevs.set.presentation.requests.RequestsUi;
 import com.aknevs.set.presentation.songdetail.SongDetailActivity;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -46,6 +55,7 @@ public class SongListFragment extends Fragment {
 
     private GetSongsUseCase getSongs;
     private SyncSongsUseCase syncSongs;
+    private ManageRequestsUseCase requests;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable pendingSearch;
@@ -65,6 +75,50 @@ public class SongListFragment extends Fragment {
     private MaterialButton syncButton;
     private LinearProgressIndicator progress;
 
+    // requests bar
+    private View requestDot;
+    private TextView requestStatusText;
+    private TextView queueButton;
+    private TextView adminButton;
+    private MaterialSwitch requestSwitch;
+    private RequestsAvailability availability = RequestsAvailability.LOADING;
+    private RequestsConnection connection = RequestsConnection.CONNECTING;
+    private boolean admin = false;
+    private boolean writing = false;
+    private boolean bindingSwitch = false;
+    private int pendingCount = 0;
+
+    private final RequestListener requestListener = new RequestListener() {
+        @Override
+        public void onRequestsChanged(List<SongRequest> pending) {
+            pendingCount = pending.size();
+            updateQueueButton();
+        }
+
+        @Override
+        public void onConnectionChanged(RequestsConnection c, String detail) {
+            connection = c;
+            refreshRequestsBar();
+        }
+
+        @Override
+        public void onAvailabilityChanged(RequestsAvailability a) {
+            availability = a;
+            refreshRequestsBar();
+        }
+
+        @Override
+        public void onAdminChanged(boolean isAdmin, String email) {
+            admin = isAdmin;
+            refreshRequestsBar();
+        }
+
+        @Override
+        public void onNewRequest(SongRequest request) {
+            showMessage(getString(R.string.request_new, request.getTitle()));
+        }
+    };
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -79,6 +133,7 @@ public class SongListFragment extends Fragment {
         AknApplication app = (AknApplication) requireActivity().getApplication();
         getSongs = app.getGetSongsUseCase();
         syncSongs = app.getSyncSongsUseCase();
+        requests = app.getManageRequestsUseCase();
 
         root = view;
         emptyState = view.findViewById(R.id.empty_state);
@@ -90,6 +145,11 @@ public class SongListFragment extends Fragment {
         clearButton = view.findViewById(R.id.button_clear_search);
         syncButton = view.findViewById(R.id.button_sync);
         progress = view.findViewById(R.id.sync_progress);
+        requestDot = view.findViewById(R.id.view_request_dot);
+        requestStatusText = view.findViewById(R.id.text_request_status);
+        queueButton = view.findViewById(R.id.button_queue);
+        adminButton = view.findViewById(R.id.button_admin);
+        requestSwitch = view.findViewById(R.id.switch_requests);
 
         RecyclerView recycler = view.findViewById(R.id.recycler_songs);
         adapter = new SongAdapter(app.getFinishedSongsStore());
@@ -111,18 +171,34 @@ public class SongListFragment extends Fragment {
         });
         searchInput.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                InputMethodManager imm = (InputMethodManager)
-                        requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                if (imm != null) imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                hideKeyboard();
                 return true;
             }
             return false;
+        });
+
+        queueButton.setOnClickListener(v -> RequestQueueSheet.show(getParentFragmentManager()));
+        adminButton.setOnClickListener(v -> AdminSignInDialog.show(requireContext(), requests));
+        requestSwitch.setOnCheckedChangeListener((button, checked) -> {
+            if (!bindingSwitch) setRequestsOpen(checked);
         });
 
         updateLastSync();
         updateCount();
         setSyncing(syncing);
         loadSongs();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        requests.observe(requestListener); // replays the current state immediately
+    }
+
+    @Override
+    public void onStop() {
+        requests.stopObserving(requestListener);
+        super.onStop();
     }
 
     @Override
@@ -167,14 +243,62 @@ public class SongListFragment extends Fragment {
         });
     }
 
+    // ---------- song requests ----------
+
+    /** One place that redraws the whole requests bar from the current state. */
+    private void refreshRequestsBar() {
+        Context context = requireContext();
+        requestStatusText.setText(RequestsUi.statusText(context, availability));
+        requestStatusText.setTextColor(ContextCompat.getColor(context,
+                availability == RequestsAvailability.OPEN
+                        ? R.color.akn_text_primary : R.color.akn_text_secondary));
+        requestDot.getBackground().mutate()
+                .setTint(RequestsUi.dotColor(context, availability, connection));
+
+        adminButton.setVisibility(admin ? View.GONE : View.VISIBLE);
+        requestSwitch.setVisibility(admin ? View.VISIBLE : View.GONE);
+        requestSwitch.setEnabled(admin && !writing && availability != RequestsAvailability.LOADING);
+        if (!writing) { // during a change the switch keeps showing what the admin just chose
+            bindingSwitch = true;
+            requestSwitch.setChecked(availability == RequestsAvailability.OPEN);
+            bindingSwitch = false;
+        }
+    }
+
+    private void updateQueueButton() {
+        queueButton.setText(pendingCount == 0
+                ? getString(R.string.queue_button)
+                : getString(R.string.queue_button_count, pendingCount));
+        queueButton.setSelected(pendingCount > 0); // accent when something is waiting
+    }
+
+    private void setRequestsOpen(boolean open) {
+        writing = true;
+        refreshRequestsBar();
+        requests.setRequestsOpen(open, new RepositoryCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean value) {
+                if (!isViewAlive()) return;
+                writing = false;
+                refreshRequestsBar();
+            }
+
+            @Override
+            public void onError(Exception error) {
+                if (!isViewAlive()) return;
+                writing = false;
+                refreshRequestsBar(); // snaps the switch back to the real value
+                showMessage(RequestsUi.adminErrorMessage(error));
+            }
+        });
+    }
+
     // ---------- opening a song ----------
 
     /** Opens the detail screen on the songs currently shown, so Prev/Next follow the list. */
     private void openSong(Song song) {
         searchInput.clearFocus();
-        InputMethodManager imm = (InputMethodManager)
-                requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (imm != null) imm.hideSoftInputFromWindow(searchInput.getWindowToken(), 0);
+        hideKeyboard();
 
         List<Song> shown = adapter.getCurrentList();
         ArrayList<String> ids = new ArrayList<>(shown.size());
@@ -184,6 +308,12 @@ public class SongListFragment extends Fragment {
             if (shown.get(i).getId().equals(song.getId())) index = i;
         }
         startActivity(SongDetailActivity.newIntent(requireContext(), ids, index));
+    }
+
+    private void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager)
+                requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) imm.hideSoftInputFromWindow(searchInput.getWindowToken(), 0);
     }
 
     // ---------- sync ----------

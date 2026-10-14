@@ -71,6 +71,19 @@ public class SongRepositoryImpl implements SongRepository {
     }
 
     @Override
+    public void findRequestedSongId(String songId, String title, String artist,
+                                    RepositoryCallback<String> callback) {
+        dbExecutor.execute(() -> {
+            try {
+                deliverSuccess(callback, database.findSongId(songId, title, artist));
+            } catch (Exception e) {
+                Log.w(TAG, "Song lookup failed", e);
+                deliverError(callback, e);
+            }
+        });
+    }
+
+    @Override
     public void syncSongs(RepositoryCallback<SyncResult> callback) {
         if (!syncing.compareAndSet(false, true)) {
             deliverError(callback, new SyncException(SyncException.Reason.BUSY, "Sync running"));
