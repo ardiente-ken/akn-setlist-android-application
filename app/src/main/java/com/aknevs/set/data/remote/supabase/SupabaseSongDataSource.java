@@ -64,6 +64,47 @@ public class SupabaseSongDataSource {
         return new ArrayList<>(songs.values());
     }
 
+    /**
+     * A fresh copy of the song a request refers to: by id when it came from the library,
+     * otherwise by title (same artist preferred). Returns null if the server has no such
+     * active song; throws if the server could not be reached in time.
+     */
+    public Song fetchRequestedSong(String songId, String title, String artist) throws SyncException {
+        if (songId != null) {
+            List<Song> byId = fetchWhere("id", "eq." + songId);
+            if (!byId.isEmpty()) return byId.get(0);
+        }
+        String wanted = title == null ? "" : title.trim();
+        if (wanted.isEmpty()) return null;
+        List<Song> byTitle = fetchWhere("title", "ilike." + escapeLike(wanted));
+        String wantedArtist = artist == null ? "" : artist.trim();
+        Song best = null;
+        int bestScore = -1;
+        for (Song song : byTitle) { // same artist first, then one that actually has text
+            int score = (song.getArtist().equalsIgnoreCase(wantedArtist) ? 2 : 0)
+                    + (song.getLyrics().trim().isEmpty() && song.getChords().trim().isEmpty() ? 0 : 1);
+            if (score > bestScore) {
+                best = song;
+                bestScore = score;
+            }
+        }
+        return best;
+    }
+
+    private List<Song> fetchWhere(String column, String filter) throws SyncException {
+        Map<String, String> query = new LinkedHashMap<>();
+        query.put("select", AppConstants.SONG_SELECT_FIELDS);
+        query.put("is_active", "eq.true");
+        query.put(column, filter);
+        query.put("order", "id.asc");
+        query.put("limit", "10");
+        return parse(client.getQuick(AppConstants.SONGS_PATH, query, 5000L).body);
+    }
+
+    private static String escapeLike(String s) {
+        return s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+    }
+
     private static List<Song> parse(String json) throws SyncException {
         try {
             JSONArray array = new JSONArray(json);

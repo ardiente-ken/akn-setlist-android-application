@@ -4,6 +4,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.util.TypedValue;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -12,23 +15,28 @@ import android.view.WindowManager;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import androidx.annotation.StringRes;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import com.aknevs.set.AknApplication;
 import com.aknevs.set.R;
 import com.aknevs.set.domain.model.Song;
+import com.aknevs.set.domain.model.RefreshResult;
 import com.aknevs.set.domain.model.RequestsConnection;
 import com.aknevs.set.domain.model.SongRequest;
 import com.aknevs.set.domain.repository.RepositoryCallback;
 import com.aknevs.set.domain.repository.RequestListener;
 import com.aknevs.set.domain.usecase.ManageRequestsUseCase;
+import com.aknevs.set.presentation.requests.RequestBanner;
 import com.aknevs.set.presentation.requests.RequestQueueSheet;
 import com.google.android.material.snackbar.Snackbar;
 import com.aknevs.set.domain.usecase.GetSongUseCase;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Read-only performance view. Receives the ordered list of song ids it can move through
@@ -65,6 +73,7 @@ public class SongDetailActivity extends AppCompatActivity {
     private Song currentSong;
     private int requestId = 0;
     private int lastChartWidth = -1;
+    private final Set<String> refreshedIds = new HashSet<>();
 
     private ScrollView scroll;
     private View content;
@@ -78,9 +87,12 @@ public class SongDetailActivity extends AppCompatActivity {
     private TextView chordsButton;
     private TextView prevButton;
     private TextView nextButton;
+    private TextView refreshButton;
+    private boolean refreshing = false;
     private TextView queueButton;
 
     private ManageRequestsUseCase requests;
+    private RequestBanner banner;
     private int pendingCount = 0;
 
     private final RequestListener requestListener = new RequestListener() {
@@ -100,7 +112,7 @@ public class SongDetailActivity extends AppCompatActivity {
 
         @Override
         public void onNewRequest(SongRequest request) {
-            showNewRequest(request);
+            banner.show(request); // top of the screen; tap to open its chords
         }
     };
 
@@ -129,6 +141,7 @@ public class SongDetailActivity extends AppCompatActivity {
 
         scroll = findViewById(R.id.scroll_song);
         content = findViewById(R.id.content_song);
+        content.setAlpha(0f); // stay hidden until the song is ready, then fade in (no empty flash)
         positionText = findViewById(R.id.text_position);
         titleText = findViewById(R.id.text_song_title);
         artistText = findViewById(R.id.text_song_artist);
@@ -140,8 +153,12 @@ public class SongDetailActivity extends AppCompatActivity {
         chordsButton = findViewById(R.id.button_chords);
         prevButton = findViewById(R.id.button_prev);
         nextButton = findViewById(R.id.button_next);
+        refreshButton = findViewById(R.id.button_refresh);
+        refreshButton.setOnClickListener(v -> refreshNow());
         queueButton = findViewById(R.id.button_queue);
         queueButton.setOnClickListener(v -> RequestQueueSheet.show(getSupportFragmentManager()));
+        banner = new RequestBanner(this,
+                ((AknApplication) getApplication()).getFindRequestedSongUseCase());
 
         findViewById(R.id.button_back).setOnClickListener(v -> finish());
         smallerButton.setOnClickListener(v -> changeFont(-STEP_SP));
@@ -172,7 +189,7 @@ public class SongDetailActivity extends AppCompatActivity {
             int width = r - l;
             if (width != lastChartWidth) {
                 lastChartWidth = width;
-                renderChart();
+                chart.post(this::renderChart); // never set text from inside a layout pass
             }
         });
 
@@ -193,13 +210,10 @@ public class SongDetailActivity extends AppCompatActivity {
         super.onStop();
     }
 
-    private void showNewRequest(SongRequest request) {
-        Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content),
-                getString(R.string.request_new, request.getTitle()), Snackbar.LENGTH_LONG);
-        snackbar.setAnchorView(prevButton); // sit above Prev/Next
-        snackbar.setBackgroundTint(ContextCompat.getColor(this, R.color.akn_surface_pressed));
-        snackbar.setTextColor(ContextCompat.getColor(this, R.color.akn_text_primary));
-        snackbar.show();
+    @Override
+    protected void onDestroy() {
+        if (banner != null) banner.release();
+        super.onDestroy();
     }
 
     @Override
@@ -232,6 +246,7 @@ public class SongDetailActivity extends AppCompatActivity {
             public void onSuccess(Song song) {
                 if (isFinishing() || isDestroyed() || myRequest != requestId) return;
                 display(song);
+                refreshInBackground(song.getId());
             }
 
             @Override
@@ -242,8 +257,97 @@ public class SongDetailActivity extends AppCompatActivity {
                 artistText.setText("");
                 chordsSummary.setVisibility(View.GONE);
                 chart.setText("");
+                content.setAlpha(1f);
             }
         });
+    }
+
+    /**
+     * Quietly fetches the newest copy. If it changed, the text updates in place and the scroll
+     * position is kept. Once per song per visit, so swiping around stays cheap.
+     */
+    private void refreshInBackground(final String songId) {
+        if (!refreshedIds.add(songId)) return;
+        getSong.refresh(songId, new RepositoryCallback<RefreshResult>() {
+            @Override
+            public void onSuccess(RefreshResult result) {
+                if (result == RefreshResult.UPDATED) reloadCurrent(songId);
+            }
+
+            @Override
+            public void onError(Exception error) {
+                // the saved copy is already showing
+            }
+        });
+    }
+
+    /** The refresh button: fetch the latest copy, redraw the song, and say what happened. */
+    private void refreshNow() {
+        if (currentSong == null || refreshing) return;
+        final String songId = currentSong.getId();
+        setRefreshing(true);
+        getSong.refresh(songId, new RepositoryCallback<RefreshResult>() {
+            @Override
+            public void onSuccess(RefreshResult result) {
+                if (isFinishing() || isDestroyed()) return;
+                setRefreshing(false);
+                reloadCurrent(songId); // always redraw from storage, even if nothing changed
+                switch (result) {
+                    case UPDATED:   showMessage(R.string.refresh_updated); break;
+                    case UNCHANGED: showMessage(R.string.refresh_unchanged); break;
+                    case NOT_FOUND: showMessage(R.string.refresh_not_found); break;
+                    default:        showMessage(R.string.refresh_offline); break;
+                }
+            }
+
+            @Override
+            public void onError(Exception error) {
+                if (isFinishing() || isDestroyed()) return;
+                setRefreshing(false);
+                showMessage(R.string.refresh_offline);
+            }
+        });
+    }
+
+    private void setRefreshing(boolean value) {
+        refreshing = value;
+        refreshButton.setEnabled(!value);
+        refreshButton.setAlpha(value ? 0.4f : 1f);
+    }
+
+    /** Re-reads the song from local storage and redraws it without a fade or a scroll jump. */
+    private void reloadCurrent(final String songId) {
+        getSong.execute(songId, new RepositoryCallback<Song>() {
+            @Override
+            public void onSuccess(Song fresh) {
+                if (isFinishing() || isDestroyed()) return;
+                if (currentSong == null || !songId.equals(currentSong.getId())) return;
+                final int scrollY = scroll.getScrollY();
+                currentSong = fresh;
+                titleText.setText(fresh.getTitle());
+                artistText.setText(fresh.getArtist());
+                updateChordsSummary();
+                renderChart();
+                chart.post(() -> {
+                    renderChart();
+                    scroll.scrollTo(0, scrollY);
+                });
+            }
+
+            @Override
+            public void onError(Exception error) {
+                // keep showing what is already on screen
+            }
+        });
+    }
+
+    private void showMessage(@StringRes int message) {
+        Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), message,
+                Snackbar.LENGTH_LONG);
+        snackbar.setAnchorView(prevButton); // sit above Prev / Refresh / Next
+        snackbar.setBackgroundTint(ContextCompat.getColor(this, R.color.akn_surface_pressed));
+        snackbar.setTextColor(ContextCompat.getColor(this, R.color.akn_text_primary));
+        snackbar.show();
     }
 
     private void updateNavigation() {
@@ -265,6 +369,7 @@ public class SongDetailActivity extends AppCompatActivity {
         artistText.setText(song.getArtist());
         updateChordsSummary();
         renderChart();
+        chart.post(this::renderChart); // covers the case where the screen was not laid out yet
         scroll.scrollTo(0, 0);
         content.setAlpha(0f);
         content.animate().alpha(1f).setDuration(140).start(); // quiet fade between songs
@@ -281,6 +386,13 @@ public class SongDetailActivity extends AppCompatActivity {
         if (currentSong == null) return;
         int width = chart.getWidth() - chart.getPaddingLeft() - chart.getPaddingRight();
         if (width <= 0) return; // not laid out yet; the layout listener will call again
+        if (currentSong.getLyrics().trim().isEmpty() && currentSong.getChords().trim().isEmpty()) {
+            SpannableString empty = new SpannableString(getString(R.string.detail_no_content));
+            empty.setSpan(new ForegroundColorSpan(ContextCompat.getColor(this, R.color.akn_text_secondary)),
+                    0, empty.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            chart.setText(empty);
+            return;
+        }
         float charWidth = chart.getPaint().measureText("0");
         int cols = Math.max(8, (int) (width / charWidth));
         chart.setText(ChordChartRenderer.render(

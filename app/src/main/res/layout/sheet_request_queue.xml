@@ -3,19 +3,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="320dp"
+    android:minHeight="360dp"
     android:orientation="vertical"
     android:paddingTop="@dimen/space_s">
 
-    <TextView
-        style="@style/Text.DetailTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="@dimen/screen_margin"
-        android:paddingEnd="@dimen/screen_margin"
-        android:text="@string/queue_title"
-        android:textSize="22sp" />
-
+    <!-- Requests (count)                         Live -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -25,6 +17,15 @@
         android:paddingTop="@dimen/space_s"
         android:paddingEnd="@dimen/screen_margin">
 
+        <TextView
+            android:id="@+id/text_sheet_title"
+            style="@style/Text.DetailTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/queue_title"
+            android:textSize="22sp" />
+
         <View
             android:id="@+id/view_sheet_dot"
             android:layout_width="8dp"
@@ -32,22 +33,11 @@
             android:background="@drawable/bg_dot" />
 
         <TextView
-            android:id="@+id/text_sheet_status"
+            android:id="@+id/text_sheet_conn"
             style="@style/Text.Caption"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_weight="1" />
-
-        <TextView
-            android:id="@+id/button_sheet_signout"
-            style="@style/Widget.Akn.ToolButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:minHeight="32dp"
-            android:text="@string/admin_sign_out"
-            android:textSize="12sp"
-            android:visibility="gone" />
+            android:layout_marginStart="8dp" />
     </LinearLayout>
 
     <TextView
@@ -60,6 +50,66 @@
         android:paddingEnd="@dimen/screen_margin"
         android:textColor="@color/akn_error"
         android:visibility="gone" />
+
+    <!-- [Song requests: Open                    (toggle)] -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/screen_margin"
+        android:layout_marginTop="@dimen/space_m"
+        android:layout_marginEnd="@dimen/screen_margin"
+        android:background="@drawable/bg_card"
+        android:gravity="center_vertical"
+        android:minHeight="64dp"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/space_m"
+        android:paddingTop="@dimen/space_s"
+        android:paddingEnd="@dimen/space_m"
+        android:paddingBottom="@dimen/space_s">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/text_sheet_setting"
+                style="@style/Text.Title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/text_sheet_admin"
+                style="@style/Text.Caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/akn_text_tertiary"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/switch_sheet_requests"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_s"
+            android:contentDescription="@string/requests_switch"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/button_sheet_signin"
+            style="@style/Widget.Akn.ToolButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_s"
+            android:minHeight="36dp"
+            android:text="@string/request_sign_in"
+            android:textSize="13sp" />
+    </LinearLayout>
 
     <View
         android:layout_width="match_parent"

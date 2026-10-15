@@ -54,6 +54,18 @@ public class SupabaseClient {
     }
 
     public Page get(String path, Map<String, String> query) throws SyncException {
+        return get(path, query, http);
+    }
+
+    /** Same as get(), but gives up after callTimeoutMs so a tap never waits on a slow network. */
+    public Page getQuick(String path, Map<String, String> query, long callTimeoutMs)
+            throws SyncException {
+        return get(path, query,
+                http.newBuilder().callTimeout(callTimeoutMs, TimeUnit.MILLISECONDS).build());
+    }
+
+    private Page get(String path, Map<String, String> query, OkHttpClient httpClient)
+            throws SyncException {
         if (!isConfigured()) {
             throw new SyncException(SyncException.Reason.NOT_CONFIGURED,
                     "SUPABASE_URL / SUPABASE_KEY are not set");
@@ -80,7 +92,7 @@ public class SupabaseClient {
             request.header("Authorization", "Bearer " + apiKey);
         }
 
-        try (Response response = http.newCall(request.build()).execute()) {
+        try (Response response = httpClient.newCall(request.build()).execute()) {
             int code = response.code();
             if (code == 401 || code == 403) {
                 throw new SyncException(SyncException.Reason.AUTH, "HTTP " + code);

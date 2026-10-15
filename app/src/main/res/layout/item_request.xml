@@ -8,65 +8,69 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:minHeight="64dp"
+        android:orientation="horizontal"
         android:paddingStart="@dimen/screen_margin"
-        android:paddingTop="14dp"
-        android:paddingEnd="@dimen/screen_margin"
-        android:paddingBottom="14dp">
+        android:paddingTop="10dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="10dp">
 
         <TextView
-            android:id="@+id/text_request_title"
-            style="@style/Text.Title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="2"
-            tools:text="Requested song" />
-
-        <TextView
-            android:id="@+id/text_request_artist"
+            android:id="@+id/text_request_number"
             style="@style/Text.Body"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            tools:text="Artist" />
-
-        <TextView
-            android:id="@+id/text_request_meta"
-            style="@style/Text.Caption"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:minWidth="28dp"
             android:textColor="@color/akn_text_tertiary"
-            tools:text="Alice, 3 min. ago" />
+            tools:text="1." />
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal">
+            android:layout_weight="1"
+            android:orientation="vertical">
 
             <TextView
-                android:id="@+id/button_request_chords"
-                style="@style/Widget.Akn.ToolButton"
-                android:layout_width="wrap_content"
+                android:id="@+id/text_request_title"
+                style="@style/Text.Title"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="36dp"
-                android:text="@string/request_chords"
-                android:textSize="13sp" />
+                android:ellipsize="end"
+                android:maxLines="1"
+                tools:text="Requested song" />
 
             <TextView
-                android:id="@+id/button_request_remove"
-                style="@style/Widget.Akn.ToolButton"
-                android:layout_width="wrap_content"
+                android:id="@+id/text_request_meta"
+                style="@style/Text.Caption"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:minHeight="36dp"
-                android:text="@string/request_remove"
-                android:textSize="13sp" />
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/akn_text_tertiary"
+                tools:text="Artist · Alice · 3 min. ago" />
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/button_request_chords"
+            style="@style/Widget.Akn.ToolButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:minHeight="36dp"
+            android:text="@string/request_open"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/button_request_remove"
+            style="@style/Widget.Akn.ToolButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:minHeight="36dp"
+            android:text="@string/request_remove"
+            android:textSize="13sp" />
     </LinearLayout>
 
     <View

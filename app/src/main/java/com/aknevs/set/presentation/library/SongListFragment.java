@@ -18,6 +18,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
@@ -36,12 +37,11 @@ import com.aknevs.set.domain.repository.RequestListener;
 import com.aknevs.set.domain.usecase.GetSongsUseCase;
 import com.aknevs.set.domain.usecase.ManageRequestsUseCase;
 import com.aknevs.set.domain.usecase.SyncSongsUseCase;
-import com.aknevs.set.presentation.requests.AdminSignInDialog;
+import com.aknevs.set.presentation.requests.RequestBanner;
 import com.aknevs.set.presentation.requests.RequestQueueSheet;
 import com.aknevs.set.presentation.requests.RequestsUi;
 import com.aknevs.set.presentation.songdetail.SongDetailActivity;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -62,6 +62,7 @@ public class SongListFragment extends Fragment {
     private int requestId = 0;
     private int totalCount = 0;
     private boolean syncing = false;
+    private boolean startedOnce = false;
 
     private SongAdapter adapter;
     private View root;
@@ -79,13 +80,9 @@ public class SongListFragment extends Fragment {
     private View requestDot;
     private TextView requestStatusText;
     private TextView queueButton;
-    private TextView adminButton;
-    private MaterialSwitch requestSwitch;
+    private RequestBanner banner;
     private RequestsAvailability availability = RequestsAvailability.LOADING;
     private RequestsConnection connection = RequestsConnection.CONNECTING;
-    private boolean admin = false;
-    private boolean writing = false;
-    private boolean bindingSwitch = false;
     private int pendingCount = 0;
 
     private final RequestListener requestListener = new RequestListener() {
@@ -108,14 +105,8 @@ public class SongListFragment extends Fragment {
         }
 
         @Override
-        public void onAdminChanged(boolean isAdmin, String email) {
-            admin = isAdmin;
-            refreshRequestsBar();
-        }
-
-        @Override
         public void onNewRequest(SongRequest request) {
-            showMessage(getString(R.string.request_new, request.getTitle()));
+            banner.show(request); // top of the screen; tap to open its chords
         }
     };
 
@@ -148,8 +139,6 @@ public class SongListFragment extends Fragment {
         requestDot = view.findViewById(R.id.view_request_dot);
         requestStatusText = view.findViewById(R.id.text_request_status);
         queueButton = view.findViewById(R.id.button_queue);
-        adminButton = view.findViewById(R.id.button_admin);
-        requestSwitch = view.findViewById(R.id.switch_requests);
 
         RecyclerView recycler = view.findViewById(R.id.recycler_songs);
         adapter = new SongAdapter(app.getFinishedSongsStore());
@@ -178,10 +167,8 @@ public class SongListFragment extends Fragment {
         });
 
         queueButton.setOnClickListener(v -> RequestQueueSheet.show(getParentFragmentManager()));
-        adminButton.setOnClickListener(v -> AdminSignInDialog.show(requireContext(), requests));
-        requestSwitch.setOnCheckedChangeListener((button, checked) -> {
-            if (!bindingSwitch) setRequestsOpen(checked);
-        });
+        banner = new RequestBanner((AppCompatActivity) requireActivity(),
+                app.getFindRequestedSongUseCase());
 
         updateLastSync();
         updateCount();
@@ -192,6 +179,8 @@ public class SongListFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
+        if (startedOnce) loadSongs(); // a song fetched from the queue may be new to the list
+        startedOnce = true;
         requests.observe(requestListener); // replays the current state immediately
     }
 
@@ -205,6 +194,7 @@ public class SongListFragment extends Fragment {
     public void onDestroyView() {
         handler.removeCallbacksAndMessages(null);
         requestId++; // invalidate any in-flight load
+        if (banner != null) banner.release();
         super.onDestroyView();
     }
 
@@ -255,14 +245,6 @@ public class SongListFragment extends Fragment {
         requestDot.getBackground().mutate()
                 .setTint(RequestsUi.dotColor(context, availability, connection));
 
-        adminButton.setVisibility(admin ? View.GONE : View.VISIBLE);
-        requestSwitch.setVisibility(admin ? View.VISIBLE : View.GONE);
-        requestSwitch.setEnabled(admin && !writing && availability != RequestsAvailability.LOADING);
-        if (!writing) { // during a change the switch keeps showing what the admin just chose
-            bindingSwitch = true;
-            requestSwitch.setChecked(availability == RequestsAvailability.OPEN);
-            bindingSwitch = false;
-        }
     }
 
     private void updateQueueButton() {
@@ -270,27 +252,6 @@ public class SongListFragment extends Fragment {
                 ? getString(R.string.queue_button)
                 : getString(R.string.queue_button_count, pendingCount));
         queueButton.setSelected(pendingCount > 0); // accent when something is waiting
-    }
-
-    private void setRequestsOpen(boolean open) {
-        writing = true;
-        refreshRequestsBar();
-        requests.setRequestsOpen(open, new RepositoryCallback<Boolean>() {
-            @Override
-            public void onSuccess(Boolean value) {
-                if (!isViewAlive()) return;
-                writing = false;
-                refreshRequestsBar();
-            }
-
-            @Override
-            public void onError(Exception error) {
-                if (!isViewAlive()) return;
-                writing = false;
-                refreshRequestsBar(); // snaps the switch back to the real value
-                showMessage(RequestsUi.adminErrorMessage(error));
-            }
-        });
     }
 
     // ---------- opening a song ----------

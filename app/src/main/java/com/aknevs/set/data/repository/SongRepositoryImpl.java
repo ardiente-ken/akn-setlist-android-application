@@ -7,6 +7,7 @@ import android.util.Log;
 import com.aknevs.set.data.local.database.SongDatabaseHelper;
 import com.aknevs.set.data.local.prefs.SyncPreferences;
 import com.aknevs.set.data.remote.supabase.SupabaseSongDataSource;
+import com.aknevs.set.domain.model.RefreshResult;
 import com.aknevs.set.domain.model.Song;
 import com.aknevs.set.domain.model.SyncException;
 import com.aknevs.set.domain.model.SyncResult;
@@ -30,6 +31,7 @@ public class SongRepositoryImpl implements SongRepository {
     // Separate executors so a slow network call never delays local reads/searches.
     private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
     private final ExecutorService dbExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService lookupExecutor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final AtomicBoolean syncing = new AtomicBoolean(false);
 
@@ -75,11 +77,70 @@ public class SongRepositoryImpl implements SongRepository {
                                     RepositoryCallback<String> callback) {
         dbExecutor.execute(() -> {
             try {
-                deliverSuccess(callback, database.findSongId(songId, title, artist));
+                String local = database.findSongId(songId, title, artist);
+                if (local != null) {
+                    deliverSuccess(callback, local); // open instantly; the song screen refreshes itself
+                    return;
+                }
             } catch (Exception e) {
-                Log.w(TAG, "Song lookup failed", e);
-                deliverError(callback, e);
+                Log.w(TAG, "Local song lookup failed", e);
             }
+            // Not stored on this phone yet, so it has to come from the server.
+            lookupExecutor.execute(() -> {
+                Song fetched = null;
+                try {
+                    fetched = remote.fetchRequestedSong(songId, title, artist);
+                } catch (Exception e) {
+                    Log.w(TAG, "Fresh song lookup failed", e);
+                }
+                final Song found = fetched;
+                if (found == null) {
+                    deliverSuccess(callback, null);
+                    return;
+                }
+                dbExecutor.execute(() -> {
+                    try {
+                        database.upsertSong(found); // one row; offline reading keeps working
+                        deliverSuccess(callback, found.getId());
+                    } catch (Exception e) {
+                        Log.w(TAG, "Could not store the song", e);
+                        deliverError(callback, e);
+                    }
+                });
+            });
+        });
+    }
+
+    @Override
+    public void refreshSong(String id, RepositoryCallback<RefreshResult> callback) {
+        lookupExecutor.execute(() -> {
+            final Song fetched;
+            try {
+                fetched = remote.fetchRequestedSong(id, null, null); // by id only
+            } catch (Exception e) {
+                Log.w(TAG, "Song refresh failed (offline?)", e);
+                deliverSuccess(callback, RefreshResult.OFFLINE);
+                return;
+            }
+            if (fetched == null) {
+                deliverSuccess(callback, RefreshResult.NOT_FOUND);
+                return;
+            }
+            dbExecutor.execute(() -> {
+                try {
+                    Song current = database.getSongById(id);
+                    boolean changed = current == null
+                            || !current.getLyrics().equals(fetched.getLyrics())
+                            || !current.getChords().equals(fetched.getChords())
+                            || !current.getTitle().equals(fetched.getTitle())
+                            || !current.getArtist().equals(fetched.getArtist());
+                    if (changed) database.upsertSong(fetched);
+                    deliverSuccess(callback, changed ? RefreshResult.UPDATED : RefreshResult.UNCHANGED);
+                } catch (Exception e) {
+                    Log.w(TAG, "Could not store the refreshed song", e);
+                    deliverError(callback, e);
+                }
+            });
         });
     }
 

@@ -1,5 +1,6 @@
 package com.aknevs.set.domain.repository;
 
+import com.aknevs.set.domain.model.RefreshResult;
 import com.aknevs.set.domain.model.Song;
 import com.aknevs.set.domain.model.SyncResult;
 
@@ -13,9 +14,16 @@ public interface SongRepository {
     /** Loads one complete song (lyrics and chords included) from local storage. */
     void getSong(String id, RepositoryCallback<Song> callback);
 
-    /** Finds the stored song a request refers to. Result is its id, or null if not in the library. */
+    /**
+     * Resolves the song a request refers to. Answers instantly from local storage; only if the
+     * song is not stored yet does it fetch it from the server. Result is the local song id,
+     * or null if the song is not in the library.
+     */
     void findRequestedSongId(String songId, String title, String artist,
                              RepositoryCallback<String> callback);
+
+    /** Fetches the latest copy of one song and stores it if anything changed. */
+    void refreshSong(String id, RepositoryCallback<RefreshResult> callback);
 
     /** Fetches active songs from the remote and atomically replaces the local collection. */
     void syncSongs(RepositoryCallback<SyncResult> callback);

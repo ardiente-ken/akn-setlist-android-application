@@ -23,7 +23,36 @@ public final class RequestsUi {
         }
     }
 
-    /** Mint = open and live, red = connection down (the status may be stale), grey otherwise. */
+    public static String settingText(Context context, RequestsAvailability availability) {
+        switch (availability) {
+            case OPEN:   return context.getString(R.string.setting_requests_open);
+            case CLOSED: return context.getString(R.string.setting_requests_closed);
+            case LOADING:
+            default:     return context.getString(R.string.setting_requests_checking);
+        }
+    }
+
+    public static String connectionText(Context context, RequestsConnection connection) {
+        switch (connection) {
+            case LIVE:    return context.getString(R.string.conn_live);
+            case OFFLINE: return context.getString(R.string.conn_offline);
+            case CONNECTING:
+            default:      return context.getString(R.string.conn_connecting);
+        }
+    }
+
+    /** Accent = live, red = offline, grey while connecting. */
+    public static int connectionColor(Context context, RequestsConnection connection) {
+        int res;
+        switch (connection) {
+            case LIVE:    res = R.color.akn_accent; break;
+            case OFFLINE: res = R.color.akn_error; break;
+            default:      res = R.color.akn_text_secondary; break;
+        }
+        return ContextCompat.getColor(context, res);
+    }
+
+    /** Accent = open and live, red = connection down (the status may be stale), grey otherwise. */
     public static int dotColor(Context context, RequestsAvailability availability,
                                RequestsConnection connection) {
         int res;

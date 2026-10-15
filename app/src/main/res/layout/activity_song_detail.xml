@@ -149,6 +149,16 @@
             android:text="@string/detail_prev" />
 
         <TextView
+            android:id="@+id/button_refresh"
+            style="@style/Widget.Akn.ToolButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:contentDescription="@string/detail_refresh"
+            android:minWidth="56dp"
+            android:text="&#x21BB;"
+            android:textSize="20sp" />
+
+        <TextView
             android:id="@+id/button_next"
             style="@style/Widget.Akn.ToolButton"
             android:layout_width="0dp"

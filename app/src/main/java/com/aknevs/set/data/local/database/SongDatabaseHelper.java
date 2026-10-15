@@ -67,15 +67,7 @@ public class SongDatabaseHelper extends SQLiteOpenHelper {
             SQLiteStatement insert = db.compileStatement(INSERT);
             try {
                 for (Song song : songs) {
-                    insert.clearBindings();
-                    insert.bindString(1, song.getId());
-                    insert.bindString(2, song.getTitle());
-                    insert.bindString(3, song.getArtist());
-                    insert.bindLong(4, song.isActive() ? 1L : 0L);
-                    insert.bindString(5, song.getCreatedAt());
-                    insert.bindString(6, song.getLyrics());
-                    insert.bindString(7, song.getChords());
-                    insert.bindString(8, song.getUpdatedAt());
+                    bindSong(insert, song);
                     insert.executeInsert();
                 }
             } finally {
@@ -85,6 +77,29 @@ public class SongDatabaseHelper extends SQLiteOpenHelper {
         } finally {
             db.endTransaction();
         }
+    }
+
+    /** Adds or updates a single song, leaving the rest of the library untouched. */
+    public void upsertSong(Song song) {
+        SQLiteStatement insert = getWritableDatabase().compileStatement(INSERT);
+        try {
+            bindSong(insert, song);
+            insert.executeInsert();
+        } finally {
+            insert.close();
+        }
+    }
+
+    private static void bindSong(SQLiteStatement insert, Song song) {
+        insert.clearBindings();
+        insert.bindString(1, song.getId());
+        insert.bindString(2, song.getTitle());
+        insert.bindString(3, song.getArtist());
+        insert.bindLong(4, song.isActive() ? 1L : 0L);
+        insert.bindString(5, song.getCreatedAt());
+        insert.bindString(6, song.getLyrics());
+        insert.bindString(7, song.getChords());
+        insert.bindString(8, song.getUpdatedAt());
     }
 
     /**
@@ -147,7 +162,8 @@ public class SongDatabaseHelper extends SQLiteOpenHelper {
         if (wantedTitle.isEmpty()) return null;
         try (Cursor c = db.rawQuery("SELECT id FROM " + AppConstants.TABLE_SONGS
                         + " WHERE title = ? COLLATE NOCASE"
-                        + " ORDER BY (artist = ? COLLATE NOCASE) DESC, id ASC LIMIT 1",
+                        + " ORDER BY (artist = ? COLLATE NOCASE) DESC,"
+                        + " (length(lyrics) + length(chords) > 0) DESC, id ASC LIMIT 1",
                 new String[]{wantedTitle, artist == null ? "" : artist.trim()})) {
             if (c.moveToFirst()) return c.getString(0);
         }

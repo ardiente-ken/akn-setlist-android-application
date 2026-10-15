@@ -11,9 +11,9 @@
     <color name="akn_text_secondary">#8D9199</color>
     <color name="akn_text_tertiary">#5F636B</color>
 
-    <!-- Accent: muted mint-lime, used only for primary actions -->
-    <color name="akn_accent">#B4E3A0</color>
-    <color name="akn_accent_pressed">#9CCB88</color>
+    <!-- Accent: amber, used for primary actions and live status -->
+    <color name="akn_accent">#FFB347</color>
+    <color name="akn_accent_pressed">#E89F3A</color>
     <color name="akn_on_accent">#16171A</color>
 
     <!-- Feedback -->

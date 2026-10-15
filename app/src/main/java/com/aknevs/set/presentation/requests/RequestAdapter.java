@@ -15,11 +15,15 @@ import com.aknevs.set.R;
 import com.aknevs.set.core.utils.DateUtils;
 import com.aknevs.set.domain.model.SongRequest;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class RequestAdapter extends ListAdapter<SongRequest, RequestAdapter.RequestViewHolder> {
 
     public interface ActionListener {
         void onOpenChords(SongRequest request);
 
+        /** Tapped Remove. When signed out, the same button reads "Sign in" and lands here too. */
         void onRemove(SongRequest request);
     }
 
@@ -40,6 +44,7 @@ public class RequestAdapter extends ListAdapter<SongRequest, RequestAdapter.Requ
             };
 
     private ActionListener actionListener;
+    private boolean admin;
 
     public RequestAdapter() {
         super(DIFF);
@@ -47,6 +52,18 @@ public class RequestAdapter extends ListAdapter<SongRequest, RequestAdapter.Requ
 
     public void setActionListener(ActionListener listener) {
         this.actionListener = listener;
+    }
+
+    /** Admins see Remove; everyone else sees Sign in on the same button. */
+    public void setAdmin(boolean admin) {
+        if (this.admin == admin) return;
+        this.admin = admin;
+        notifyItemRangeChanged(0, getItemCount());
+    }
+
+    /** Submits a new queue and renumbers the rows afterwards (1., 2., 3. ...). */
+    public void submit(List<SongRequest> requests) {
+        submitList(new ArrayList<>(requests), () -> notifyItemRangeChanged(0, getItemCount()));
     }
 
     @NonNull
@@ -61,34 +78,36 @@ public class RequestAdapter extends ListAdapter<SongRequest, RequestAdapter.Requ
         SongRequest request = getItem(position);
         Context context = holder.itemView.getContext();
 
+        holder.number.setText(context.getString(R.string.request_number, position + 1));
         holder.title.setText(request.getTitle());
-        boolean hasArtist = !request.getArtist().trim().isEmpty();
-        holder.artist.setVisibility(hasArtist ? View.VISIBLE : View.GONE);
-        holder.artist.setText(request.getArtist());
 
-        String name = request.getRequesterName().trim().isEmpty()
+        List<String> parts = new ArrayList<>();
+        if (!request.getArtist().trim().isEmpty()) parts.add(request.getArtist().trim());
+        parts.add(request.getRequesterName().trim().isEmpty()
                 ? context.getString(R.string.request_anonymous)
-                : request.getRequesterName();
+                : request.getRequesterName().trim());
         String when = DateUtils.relativeTime(context, request.getCreatedAt());
-        holder.meta.setText(when.isEmpty() ? name
-                : context.getString(R.string.request_meta, name, when));
+        if (!when.isEmpty()) parts.add(when);
+        holder.meta.setText(android.text.TextUtils.join(" \u00B7 ", parts));
 
-        // A rebind (e.g. after a failed removal) restores a pressed button.
-        holder.remove.setEnabled(true);
+        holder.chords.setEnabled(true);
+        holder.chords.setAlpha(1f);
+        holder.remove.setText(admin ? R.string.request_remove : R.string.request_sign_in);
+        holder.remove.setEnabled(true); // a rebind restores a pressed button
         holder.remove.setAlpha(1f);
     }
 
     public class RequestViewHolder extends RecyclerView.ViewHolder {
+        final TextView number;
         final TextView title;
-        final TextView artist;
         final TextView meta;
         final TextView chords;
         final TextView remove;
 
         RequestViewHolder(@NonNull View itemView) {
             super(itemView);
+            number = itemView.findViewById(R.id.text_request_number);
             title = itemView.findViewById(R.id.text_request_title);
-            artist = itemView.findViewById(R.id.text_request_artist);
             meta = itemView.findViewById(R.id.text_request_meta);
             chords = itemView.findViewById(R.id.button_request_chords);
             remove = itemView.findViewById(R.id.button_request_remove);
@@ -96,14 +115,18 @@ public class RequestAdapter extends ListAdapter<SongRequest, RequestAdapter.Requ
             chords.setOnClickListener(v -> {
                 int position = getBindingAdapterPosition();
                 if (position != RecyclerView.NO_POSITION && actionListener != null) {
+                    chords.setEnabled(false); // looking the song up; no double taps
+                    chords.setAlpha(0.4f);
                     actionListener.onOpenChords(getItem(position));
                 }
             });
             remove.setOnClickListener(v -> {
                 int position = getBindingAdapterPosition();
                 if (position != RecyclerView.NO_POSITION && actionListener != null) {
-                    remove.setEnabled(false); // no double taps while it is being removed
-                    remove.setAlpha(0.4f);
+                    if (admin) { // no double taps while it is being removed
+                        remove.setEnabled(false);
+                        remove.setAlpha(0.4f);
+                    }
                     actionListener.onRemove(getItem(position));
                 }
             });

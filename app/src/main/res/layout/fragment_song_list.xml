@@ -125,23 +125,6 @@
             android:text="@string/queue_button"
             android:textSize="13sp" />
 
-        <TextView
-            android:id="@+id/button_admin"
-            style="@style/Widget.Akn.ToolButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:minHeight="36dp"
-            android:text="@string/admin_button"
-            android:textSize="13sp" />
-
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/switch_requests"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:contentDescription="@string/requests_switch"
-            android:visibility="gone" />
     </LinearLayout>
 
     <!-- Search -->
